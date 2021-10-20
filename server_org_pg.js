@@ -27,7 +27,7 @@ const server = http.createServer((rq, rs) => {
 	});
 	client.connect();
 	
-	client.query('SELECT name from author', (err, res) => {
+	client.query('SELECT id, name from author', (err, res) => {
 		console.log(err, res);
 		if(err){
 			console.error(err);
@@ -36,6 +36,11 @@ const server = http.createServer((rq, rs) => {
 			return;
 		}
 		client.end();
+
+		for(let r of res.rows){
+
+		}
+		
 		let dbdate = res.rows[0].name;
 		
 		rs.statusCode = 200;
