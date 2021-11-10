@@ -31,6 +31,7 @@ app.post('/signin', async (req, res) => {
     let login = req.body.name;
     let pass = req.body.pass;
     let sql = "SELECT name as result FROM users WHERE name = '" + login + "' AND pass = md5('" + pass+"')";
+    //let sql = {text: "SELECT name as result FROM users WHERE name = $1 AND pass = md5($2)", values: [login, pass]};
     try{
         let data = await client.query(sql);
         if(data.rows.length>0 && data.rows[0].result){
@@ -43,7 +44,8 @@ app.post('/signin', async (req, res) => {
     catch(e)
     {
         console.log(e);
-        res.send(`error ${e.message}`);
+        sql = "";
+        res.send(`error ${e.message}. <br/> SQL:${sql}`);
     }
 
   })
