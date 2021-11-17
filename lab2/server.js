@@ -10,21 +10,40 @@ app.use(express.urlencoded({
   extended: true
 }));
 
-const client = new Client({
+const client = new Client({ //Вставьте свои параметры БД
     user: 'postgres',
-    host: '192.168.121.137',
+    host: '192.168.121.137', 
     database: 'lib',
     password: 'P@ssw0rd',
     port: 5432,
 });
 client.connect();
 
-
-
-
+app.set('view engine', 'pug');
 
 app.get('/', (req, res) => {
-  res.send('SQli 101! <br/> 1: <a href="/login.html">login</a>')
+  res.redirect('/login.html');
+})
+
+app.get('/books', async (req, res) => {
+    let bookname = req.query.name;
+    
+    let sql = `select ba.id, a.name as author, b.name as book from books_by_authors ba
+                  left join author a on a.id = ba.aid
+                  left join book b on b.id = ba.bid`;
+    if(bookname){
+        sql+=`\rwhere b.name like '%${bookname}%'`        
+    }
+    try{
+        let data = await client.query(sql);
+        res.render('booklist', {data: data.rows});
+    }
+    catch(e)
+    {
+        console.log(e);
+        res.send(`error ${e.message}. <br/> SQL:${sql}`);
+    }
+    
 })
 
 app.post('/signin', async (req, res) => {
@@ -38,7 +57,7 @@ app.post('/signin', async (req, res) => {
     try{
         let data = await client.query(sql);
         if(data.rows.length>0 && data.rows[0].result){
-            res.send(`success ${data.rows[0].result}`);
+            res.redirect('/books');
         }else
         {
             res.send(`fail ${login}`);
