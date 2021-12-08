@@ -5,6 +5,8 @@ html
         
     body
         h1 Список книг
+        span(id='lblUser')
+
         form(action='/books', method='GET')
             span(id='lblFilter') #{filter}
             span #{filter}
@@ -24,18 +26,21 @@ html
                 tr
                     td #{book.id}
                     td #{book.author}
-                    td #{book.book}
+                    td !{book.book}
+        h1 Добавить книгу
+        form(action='addbook', method='POST')
+            <select id="author" name="author">
+                <option value="1">Брайан Керниган</option>
+                <option value="2">Деннис Ритчи</option>
+            </select>
+            input(type='text', name='bookname', value='')
+            input(type='submit', value='Добавить')
+
         script.
-            //var u = new URL(window.location);
-            //var filteredBy = u.searchParams.get("name");
-            //if(filteredBy){
-            //    var f = document.getElementById('lblFilter');
-            //    f.innerHTML = filteredBy;
-            //}
-
-            if(filteredBy.Contains('<'))
-                return;
-
             var f = document.getElementById('lblFilter');
             f.innerHTML ='<b>#{filter}</b>';
+            
+            var f = document.getElementById('lblUser');
+            const userId = ('; '+document.cookie).split(`; userId=`).pop().split(';')[0];
+            f.innerHTML = userId;
             

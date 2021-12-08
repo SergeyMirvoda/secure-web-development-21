@@ -2,10 +2,12 @@ const express = require('express');
 const app = express();
 const port = 8080;
 const { Client } = require('pg');
+const cookieParser = require('cookie-parser');
 
 
 app.use(express.static('static'));
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({
   extended: true
 }));
@@ -26,12 +28,20 @@ app.get('/', (req, res) => {
 })
 
 app.get('/books', async (req, res) => {
-    const rawCookies = req.headers;
+
+    let user = req.cookies["userId"];
+    if(!user){
+        console.log("unauthenticated. redirect to login");
+        res.redirect('/');
+        return;
+    }
+    console.log('Cookies: ', req.cookies)
+
     let bookname = req.query.name;
     
     let sql = `select ba.id, a.name as author, b.name as book from books_by_authors ba
-                  left join author a on a.id = ba.aid
-                  left join book b on b.id = ba.bid`;
+                left join author a on a.id = ba.aid
+                left join book b on b.id = ba.bid`;
     if(bookname){
         sql+=`\rwhere b.name like '%${bookname}%'`        
     }
@@ -60,7 +70,7 @@ app.post('/signin', async (req, res) => {
         let userId = data.rows[0].result;
         if(data.rows.length>0 && userId){
             const oneDayToSeconds = 24 * 60 * 60;
-            res.cookie('userId', userId,{maxAge: oneDayToSeconds });
+            res.cookie('userId', userId,{maxAge: oneDayToSeconds});//httpOnly
             res.redirect('/books');
         }else
         {
@@ -75,7 +85,38 @@ app.post('/signin', async (req, res) => {
 
   })
 
+app.post('/addbook', async (req, res) => {
+    console.log("adding new book");
+    let aid = req.body.author;
+    let bname = req.body.bookname;
+    let bid = Math.floor(Math.random() * 1000);
+
+    let booksql = {
+        text: "insert into book(id,name) values($1,$2)", 
+        values: [bid, bname]
+    };
+    let assingsql = {
+        text: "insert into books_by_authors(id, aid, bid) values($1,$2,$3)", 
+        values: [Math.floor(Math.random() * 1000), aid,bid]
+    };
+
+    try{
+        await client.query(booksql);
+        await client.query(assingsql); 
+        res.redirect('/books');
+    }
+    catch(e)
+    {
+        console.log(e);
+        res.send(`error ${e.message}. <br/> SQL:${sql}`);
+    }
+
+
+    console.log("added new book");
+  })
 
 app.listen(port, ()=>{
 	console.log(`server running at http://localhost:${port}`);
 })
+//XSS alert!!!
+//<img src=1 onerror='javascript:alert(document.cookie)'/>
